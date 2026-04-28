@@ -30,8 +30,8 @@ run_soccernet <- function(df,n=10,block_size=8){
 }
 
 
-#' @rdname run_soccernet
 #' @export
+#' @rdname run_soccernet
 run_clips <- function(df,n=10,block_size=20){
   if (!"products_services" %in% names(df)) {
     stop("data requires as a mininum a products_services column")

@@ -6,7 +6,6 @@ use soccer_rs::{
 use std::{cmp::min, result::Result, sync::Arc};
 
 /// This is my function documentation
-/// @export
 #[extendr]
 fn soccer_net(df: Dataframe<Robj>, n: usize, block_size: Option<usize>) -> Result<Robj, MyError> {
     // need to deal with the version...
@@ -73,7 +72,6 @@ fn soccer_net(df: Dataframe<Robj>, n: usize, block_size: Option<usize>) -> Resul
 }
 
 /// This is my function documentation
-/// @export
 #[extendr]
 fn clips(df: Dataframe<Robj>, n: usize, block_size: Option<usize>) -> Result<Robj, MyError> {
     let config = MODEL_CONFIG.get_config(&ModelType::CLIPS, "1.0.0").unwrap();
