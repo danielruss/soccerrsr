@@ -1,0 +1,14 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+.positai
+src/rust/vendor
+src/Makevars
+src/Makevars.win
+src/rust/target
+src/*.so
+src/*.dylib
+src/*.dll
+src/rust/Cargo.lock
+.DS_Store
