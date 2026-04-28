@@ -29,7 +29,9 @@ run_soccernet <- function(df,n=10,block_size=8){
   df |> dplyr::left_join(res,by="Id")
 }
 
+
 #' @rdname run_soccernet
+#' @export
 run_clips <- function(df,n=10,block_size=20){
   if (!"products_services" %in% names(df)) {
     stop("data requires as a mininum a products_services column")
