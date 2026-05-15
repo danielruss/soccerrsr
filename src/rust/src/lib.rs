@@ -3,9 +3,9 @@ use soccer_rs::{
     get_classification_system, get_crosswalk, CodedJobDescription, Crosswalk, ModelType, MyError,
     SoccerBuilder, SoccerPipeline, MODEL_CONFIG,
 };
-use std::{cmp::min, result::Result, sync::Arc};
+use std::{cmp::min, result::Result, slice, sync::Arc};
 
-/// This is my function documentation
+/// Run SOCcerNET from R
 #[extendr]
 fn soccer_net(df: Dataframe<Robj>, n: usize, block_size: Option<usize>) -> Result<Robj, MyError> {
     // need to deal with the version...
@@ -71,7 +71,7 @@ fn soccer_net(df: Dataframe<Robj>, n: usize, block_size: Option<usize>) -> Resul
     build_result_df(all_results, n, output_classification_system_name)
 }
 
-/// This is my function documentation
+/// Run clips
 #[extendr]
 fn clips(df: Dataframe<Robj>, n: usize, block_size: Option<usize>) -> Result<Robj, MyError> {
     let config = MODEL_CONFIG.get_config(&ModelType::CLIPS, "1.0.0").unwrap();
@@ -119,6 +119,35 @@ fn clips(df: Dataframe<Robj>, n: usize, block_size: Option<usize>) -> Result<Rob
 
     //let soccer_results = pipeline.predict_from_columns(&ids, &products_services, None, &prior)?;
     build_result_df(all_results, n, output_classification_system_name)
+}
+
+/// Embed a job
+#[extendr]
+fn embed_job(text1: &str, text2: Option<&str>) -> Result<Vec<f64>, MyError> {
+    let text1 = &[text1];
+
+    let text2 = text2.as_ref().map(|x| slice::from_ref(x));
+
+    embed(text1, text2)
+}
+
+#[extendr]
+fn embed_jobs(text1: Vec<String>, text2: Option<Vec<String>>) -> Result<Vec<f64>, MyError> {
+    let text1 = text1.iter().map(|s| s.as_str()).collect::<Vec<&str>>();
+    let text2 = text2
+        .as_ref()
+        .map(|x| x.iter().map(|y| y.as_str()).collect::<Vec<&str>>());
+
+    let text1 = text1.as_slice();
+    let text2 = text2.as_deref();
+
+    let res = soccer_rs::embed_jobs(text1, text2)?;
+    Ok(res.embeddings.iter().map(|&x| x as f64).collect())
+}
+
+fn embed(text1: &[&str], text2: Option<&[&str]>) -> Result<Vec<f64>, MyError> {
+    let res = soccer_rs::embed_jobs(text1, text2)?;
+    Ok(res.embeddings.iter().map(|&x| x as f64).collect())
 }
 
 fn get_strings(df: &Dataframe<Robj>, col_name: &str) -> Result<Strings, MyError> {
@@ -259,6 +288,8 @@ extendr_module! {
     mod soccerrsr;
     fn soccer_net;
     fn clips;
+    fn embed_job;
+    fn embed_jobs;
 }
 
 #[cfg(test)]

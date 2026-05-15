@@ -2,10 +2,10 @@
 % Please edit documentation in R/extendr-wrappers.R
 \name{soccer_net}
 \alias{soccer_net}
-\title{This is my function documentation}
+\title{Run SOCcerNET from R}
 \usage{
 soccer_net(df, n, block_size)
 }
 \description{
-This is my function documentation
+Run SOCcerNET from R
 }
