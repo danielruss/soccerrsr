@@ -1,4 +1,5 @@
 use extendr_api::prelude::*;
+use indicatif::ProgressBar;
 use soccer_rs::{
     get_classification_system, get_crosswalk, CodedJobDescription, Crosswalk, ModelType, MyError,
     SoccerBuilder, SoccerPipeline, MODEL_CONFIG,
@@ -51,12 +52,16 @@ fn soccer_net(df: Dataframe<Robj>, n: usize, block_size: Option<usize>) -> Resul
     // freeze the prior into a box...
     let prior: Vec<Box<[u16]>> = prior.into_iter().map(|v| v.into_boxed_slice()).collect();
 
+    let num_chunks = ids.chunks(effective_block_size).len() as u64;
+    let pb = ProgressBar::new(num_chunks);
+
     let all_results: Result<Vec<_>, MyError> = ids
         .chunks(effective_block_size)
         .enumerate()
         .map(|(chunk_indx, id_block)| {
             let indx_start = chunk_indx * effective_block_size;
             let indx_end = min(indx_start + id_block.len(), ids.len());
+            pb.tick();
             pipeline.predict_from_columns(
                 id_block,
                 &job_titles[indx_start..indx_end],
@@ -100,10 +105,15 @@ fn clips(df: Dataframe<Robj>, n: usize, block_size: Option<usize>) -> Result<Rob
     // freeze the prior into a box...
     let prior: Vec<Box<[u16]>> = prior.into_iter().map(|v| v.into_boxed_slice()).collect();
 
+    let num_chunks = ids.chunks(effective_block_size).len() as u64;
+
+    let pb = RProgressBar::new(num_chunks);
+
     let all_results: Result<Vec<_>, MyError> = ids
         .chunks(effective_block_size)
         .enumerate()
         .map(|(chunk_indx, id_block)| {
+            pb.tick();
             let indx_start = chunk_indx * effective_block_size;
             let indx_end = min(indx_start + id_block.len(), ids.len());
             pipeline.predict_from_columns(
@@ -281,6 +291,45 @@ fn build_result_df(
         .set_attrib("row.names", row_names)
         .map_err(|e| MyError::OutputError(e.to_string()))?;
     Ok(final_df)
+}
+
+struct RProgressBar(Option<Robj>);
+impl RProgressBar {
+    fn new(num_chunks: u64) -> Self {
+        let r_code = format!(
+            r#"
+            progress::progress_bar$new(
+                format = paste0(
+                    crayon::green('  [:bar] '),
+                    crayon::cyan(':percent | chunk :current/:total | ETA: :eta')
+                ),
+                total = {},
+                complete = '\u2588',
+                incomplete = '\u2591',
+                clear = FALSE,
+                force = TRUE
+            )
+            "#,
+            num_chunks
+        );
+        let x = eval_string(&r_code).ok();
+
+        RProgressBar(x)
+    }
+
+    fn tick(&self) {
+        if let Some(ref pb_ref) = self.0 {
+            if let Ok(tick_method) = pb_ref.dollar("tick") {
+                let _ = tick_method.call(pairlist!());
+            }
+        }
+    }
+}
+
+impl Default for RProgressBar {
+    fn default() -> Self {
+        RProgressBar(None)
+    }
 }
 
 // 2. The Macro that tells R what functions exist
