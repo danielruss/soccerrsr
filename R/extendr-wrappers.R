@@ -2,6 +2,8 @@
 
 # nolint start
 
+initialize_onnx_runtime <- function(path) .Call(wrap__initialize_onnx_runtime, path)
+
 soccer_net <- function(df, n, block_size) .Call(wrap__soccer_net, df, n, block_size)
 
 #' Run clips
