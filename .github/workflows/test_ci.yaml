@@ -2,7 +2,7 @@ name: Compile soccerrsr on multiple platforms
 on:
   push:
     branches: 
-      - ci-fx
+      - ci-fix
   workflow_dispatch:
 
 jobs:
