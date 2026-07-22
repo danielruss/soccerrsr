@@ -1,7 +1,7 @@
 on:
   push:
     branches: 
-      ci-fx
+      - ci-fx
   workflow_dispatch:
 
 jobs:
@@ -9,7 +9,7 @@ jobs:
     runs-on: windows-latest
     steps:
       # check out the code from github
-      - name: checkout_from_github
+      - name: checkout from github
         uses: actions/checkout@v4
 
       - name: Install R
