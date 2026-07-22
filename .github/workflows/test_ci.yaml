@@ -8,7 +8,7 @@ jobs:
   make_windows_version:
     steps:
       # check out the code from github
-      - name:checkout_from_github
+      - name: checkout_from_github
         uses: actions/checkout@v4
 
       - name: Install R
@@ -18,5 +18,7 @@ jobs:
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-gnu
 
       - run: Rscript -e "sessionInfo()"
