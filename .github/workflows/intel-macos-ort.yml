@@ -3,7 +3,8 @@ name: Intel macOS dynamic ONNX Runtime
 on:
   workflow_dispatch:
   push:
-    branches: [ort-fallback]
+    branches: 
+      ort-fallback
 
 jobs:
   r-dynamic-ort:

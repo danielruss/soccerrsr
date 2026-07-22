@@ -1,0 +1,22 @@
+on:
+  push:
+    branches: 
+      ci-fx
+  workflow_dispatch:
+
+jobs:
+  make_windows_version:
+    steps:
+      # check out the code from github
+      - name:checkout_from_github
+        uses: actions/checkout@v4
+
+      - name: Install R
+        uses: r-lib/actions/setup-r@v2
+      
+      - run: Rscript -e "sessionInfo()"
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - run: Rscript -e "sessionInfo()"
