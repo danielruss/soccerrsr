@@ -24,4 +24,10 @@ jobs:
           targets: x86_64-pc-windows-gnu
           targets-default: x86_64-pc-windows-gnu
 
-      - run: Rscript -e "sessionInfo()"
+      - name: Set GNU as default Rust target
+        run: rustup default stable-x86_64-pc-windows-gnu
+
+      - run: cargo version
+
+      - name: Cargo Build
+        run: cargo build --release --target x86_64-pc-windows-gnu
