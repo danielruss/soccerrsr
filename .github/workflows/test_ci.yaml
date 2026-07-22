@@ -1,3 +1,4 @@
+name: Compile soccerrsr on multiple platforms
 on:
   push:
     branches: 
