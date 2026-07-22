@@ -6,6 +6,7 @@ on:
 
 jobs:
   make_windows_version:
+    runs-on: windows-latest
     steps:
       # check out the code from github
       - name: checkout_from_github
@@ -20,5 +21,6 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: x86_64-pc-windows-gnu
+          targets-default: x86_64-pc-windows-gnu
 
       - run: Rscript -e "sessionInfo()"
