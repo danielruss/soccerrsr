@@ -66,6 +66,17 @@ jobs:
           sourcepkg: ${{ needs.source.outputs.sourcepkg }}
           ostype: ${{ needs.source.outputs.ostype }}
 
+      - name: Test ONNX Runtime
+        shell: bash
+        run: >-
+          Rscript -e
+          '.libPaths(c("mylib", .libPaths()));
+          library(soccerrsr);
+          runtime_path <- Sys.getenv("ORT_DYLIB_PATH", unset = "");
+          stopifnot(nzchar(runtime_path), file.exists(runtime_path));
+          embedding <- embed_job("plumber");
+          stopifnot(length(embedding) == 384L, all(is.finite(embedding)))'
+
       - name: Check Windows package
         uses: r-universe-org/actions/windows-check@v12
         env:
