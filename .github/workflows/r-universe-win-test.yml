@@ -25,6 +25,16 @@ jobs:
           url: https://github.com/${{ github.repository }}
           ref: ${{ github.sha }}
 
+      - name: Store source package
+        if: ${{ !cancelled() && steps.build.outputs.PACKAGE }}
+        uses: r-universe-org/actions/store-package@v12
+        with:
+          name: package-source
+          JOB_STATUS: ${{ job.status }}
+          DISTRO: ${{ steps.build.outputs.DISTRO }}
+          FILE: ${{ steps.build.outputs.SOURCEPKG }}
+          TARGET: source
+
   windows:
     name: Build and check on Windows
     needs:
