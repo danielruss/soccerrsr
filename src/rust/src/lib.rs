@@ -6,7 +6,7 @@ use soccer_rs::{
 };
 use std::{cmp::min, result::Result, slice, sync::Arc};
 
-/// Run SOCcerNET from R
+// Run SOCcerNET from R
 #[extendr]
 fn soccer_net(df: Dataframe<Robj>, n: usize, block_size: Option<usize>) -> Result<Robj, MyError> {
     // need to deal with the version...
@@ -76,7 +76,7 @@ fn soccer_net(df: Dataframe<Robj>, n: usize, block_size: Option<usize>) -> Resul
     build_result_df(all_results, n, output_classification_system_name)
 }
 
-/// Run clips
+// Run clips
 #[extendr]
 fn clips(df: Dataframe<Robj>, n: usize, block_size: Option<usize>) -> Result<Robj, MyError> {
     let config = MODEL_CONFIG.get_config(&ModelType::CLIPS, "1.0.0").unwrap();
@@ -131,7 +131,7 @@ fn clips(df: Dataframe<Robj>, n: usize, block_size: Option<usize>) -> Result<Rob
     build_result_df(all_results, n, output_classification_system_name)
 }
 
-/// Embed a job
+// Embed a job
 #[extendr]
 fn embed_job(text1: &str, text2: Option<&str>) -> Result<Vec<f64>, MyError> {
     let text1 = &[text1];
