@@ -94,7 +94,7 @@ mv_ofp <- ifelse(
 # at runtime instead of linking it at compile time. install.libs.R bundles
 # the DLL into the installed package; .onLoad() points ORT_DYLIB_PATH at it.
 
-ort_version <- "1.24.0"  # keep in sync with the `ort` crate version pinned in soccer-rs/Cargo.toml
+ort_version <- "1.24.2"  # keep in sync with the `ort` crate version pinned in soccer-rs/Cargo.toml
 ort_dll_relpath <- "src/onnxruntime.dll"
 
 if (is_windows) {
