@@ -1,14 +1,64 @@
-name: Windows GNU
+name: Test r-universe Windows build
+
 on:
   workflow_dispatch:
   push:
-    branches: 
+    branches:
       - ort-fallback
 
 jobs:
-  build:
-    name: R-universe testing
-    uses: r-universe-org/workflows/.github/workflows/build.yml@v3
-    with:
-      universe: danielruss
-      
+  source:
+    name: Build source package
+    runs-on: ubuntu-latest
+    outputs:
+      sourcepkg: ${{ steps.build.outputs.SOURCEPKG }}
+      package: ${{ steps.build.outputs.PACKAGE }}
+      ostype: ${{ steps.build.outputs.OSTYPE }}
+
+    steps:
+      - name: Build source package
+        id: build
+        uses: r-universe-org/build-source@master
+        env:
+          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          url: https://github.com/${{ github.repository }}
+          ref: ${{ github.sha }}
+
+  windows:
+    name: Build and check on Windows
+    needs:
+      - source
+    runs-on: windows-2025
+    timeout-minutes: 100
+
+    steps:
+      - name: Prepare Windows
+        uses: r-universe-org/actions/windows-prep@v12
+
+      - name: Install release R
+        uses: r-universe-org/actions/setup-r@v12
+        with:
+          r-version: release
+
+      - name: Install dependencies
+        uses: r-universe-org/actions/windows-deps@v12
+        env:
+          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          sourcepkg: ${{ needs.source.outputs.sourcepkg }}
+
+      - name: Build Windows package
+        uses: r-universe-org/actions/windows-build@v12
+        env:
+          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          sourcepkg: ${{ needs.source.outputs.sourcepkg }}
+          ostype: ${{ needs.source.outputs.ostype }}
+
+      - name: Check Windows package
+        uses: r-universe-org/actions/windows-check@v12
+        env:
+          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          sourcepkg: ${{ needs.source.outputs.sourcepkg }}
