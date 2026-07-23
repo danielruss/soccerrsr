@@ -3,15 +3,8 @@ use indicatif::ProgressBar;
 use soccer_rs::{
     get_classification_system, get_crosswalk, CodedJobDescription, Crosswalk, ModelType, MyError,
     SoccerBuilder, SoccerPipeline, MODEL_CONFIG,
-    initialize_onnx_runtime as initialize_soccer_onnx_runtime,
 };
 use std::{cmp::min, result::Result, slice, sync::Arc};
-
-/// Initialize a packaged ONNX Runtime before constructing a SOCcer pipeline.
-#[extendr]
-fn initialize_onnx_runtime(path: &str) -> Result<(), MyError> {
-    initialize_soccer_onnx_runtime(path)
-}
 
 /// Run SOCcerNET from R
 #[extendr]
@@ -342,7 +335,6 @@ impl Default for RProgressBar {
 // 2. The Macro that tells R what functions exist
 extendr_module! {
     mod soccerrsr;
-    fn initialize_onnx_runtime;
     fn soccer_net;
     fn clips;
     fn embed_job;

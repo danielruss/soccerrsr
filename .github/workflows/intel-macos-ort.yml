@@ -1,5 +1,4 @@
-name: Intel macOS dynamic ONNX Runtime
-
+name: Windows GNU
 on:
   workflow_dispatch:
   push:
@@ -7,20 +6,13 @@ on:
 
 jobs:
   r-dynamic-ort:
-    runs-on: macos-15-intel
+    runs-on: windows-latest
 
     steps:
       - name: Check out soccerrsr
         uses: actions/checkout@v4
         with:
           path: soccerrsr
-
-      - name: Check out soccer-rs
-        uses: actions/checkout@v4
-        with:
-          repository: danielruss/soccer-rs
-          ref: ort-tract-fallback
-          path: soccer-rs
 
       - name: Set up R
         uses: r-lib/actions/setup-r@v2

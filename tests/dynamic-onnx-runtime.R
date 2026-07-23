@@ -7,7 +7,6 @@ runtime_path <- Sys.getenv("ORT_DYLIB_PATH", unset = "")
 if ((is_intel_macos || is_windows_gnu) && nzchar(runtime_path)) {
   library(soccerrsr)
 
-  soccerrsr:::initialize_onnx_runtime(runtime_path)
   embedding <- embed_job("plumber")
 
   stopifnot(length(embedding) == 384L)
