@@ -23,8 +23,10 @@ NULL
 #'
 #' **`run_soccernet()`** requires:
 #' - `JobTitle` — job title text *(required)*
-#' - `JobTask` — job task description *(optional, created as empty string if missing)*
-#' - `Id` — unique row identifier *(optional, auto-generated as `row-001`, `row-002`, etc. if missing)*
+#' - `JobTask` — job task description
+#'  *(optional, created as empty string if missing)*
+#' - `Id` — unique row identifier
+#'  *(optional, auto-generated as `row-001`, `row-002`, etc. if missing)*
 #'
 #' Optionally, crosswalk columns `soc1980`, `noc2011`, and `isco1988` can be
 #' provided as lists or character vectors.
@@ -48,7 +50,8 @@ NULL
 #' run_soccernet(df, n = 5, block_size = 16)
 #'
 #' # CLIPS
-#' df <- data.frame(products_services = c("Software development", "Cloud hosting"))
+#' df <- data.frame(products_services =
+#'   c("Software development", "Cloud hosting"))
 #' run_clips(df)
 #' }
 #'
@@ -65,14 +68,14 @@ run_soccernet <- function(df,n=10,block_size=8){
     cat("...SOCcerNET requires an Id column, since you did not provide one, I am creating one with the format row-xxx where xxx is the row number\n")
     num_chars=floor(log10(nrow(df)))+1
     df["Id"]=paste0("row-",stringr::str_pad(1:nrow(df),num_chars,"left","0") )
-    df <- df |> dplyr::relocate(Id)
+    df <- df |> dplyr::relocate("Id")
   }
   if (!"JobTask" %in% names(df)){
     cat("...You did not supply a JobTask column... filling with empty strings\n")
     df["JobTask"] = ""
   }
   xw_cols <- c("soc1980","noc2011","isco1988")
-  df1 <- df |> dplyr::mutate(dplyr::across(any_of(xw_cols),\(c){if (is.list(c)) {c} else {as.list(c)}}) )
+  df1 <- df |> dplyr::mutate(dplyr::across(dplyr::any_of(xw_cols),\(c){if (is.list(c)) {c} else {as.list(c)}}) )
   res <- soccer_net(df1,n,block_size)
   df |> dplyr::left_join(res,by="Id")
 }
@@ -88,7 +91,7 @@ run_clips <- function(df,n=10,block_size=20){
     cat("...Clips requires an Id column, since you did not provide one, I am creating one with the format row-xxx where xxx is the row number\n")
     num_chars=floor(log10(nrow(df)))+1
     df["Id"]=paste0("row-",stringr::str_pad(1:nrow(df),num_chars,"left","0") )
-    df <- df |> dplyr::relocate(Id)
+    df <- df |> dplyr::relocate("Id")
   }
 
   cat("Running CLIPS...")
@@ -105,8 +108,10 @@ run_clips <- function(df,n=10,block_size=20){
 #'   - `products_services` — for CLIPS data
 #'   - `JobTitle` — for SOCcerNET data
 #'   - `JobTask` **optional** - only if `JobTitle` is provided
-#' @param text1 A single character string to embed (job title or product/service)
-#' @param text2 An optional single character string for additional context (job task)
+#' @param text1 A single character string to embed
+#' (job title or product/service)
+#' @param text2 An optional single character string for additional context
+#' (job task)
 #'
 #' @return A numeric vector of length 384 (`embed_job`) or a numeric matrix
 #'   of shape `n x 384` (`embed_jobs`) where each row is an embedding.
@@ -123,11 +128,13 @@ run_clips <- function(df,n=10,block_size=20){
 #' embed_job("Doctor")
 #'
 #' # Batch embedding - SOCcerNET
-#' df <- data.frame(JobTitle = c("Doctor", "Lawyer"), JobTask = c("Diagnose patients", "Draft contracts"))
+#' df <- data.frame(JobTitle = c("Doctor", "Lawyer"),
+#' JobTask = c("Diagnose patients", "Draft contracts"))
 #' embed_jobs(df)
 #'
 #' # Batch embedding - CLIPS
-#' df <- data.frame(products_services = c("Software development", "Cloud hosting"))
+#' df <- data.frame(products_services =
+#'   c("Software development", "Cloud hosting"))
 #' embed_jobs(df)
 #' }
 #'

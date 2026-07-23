@@ -39,8 +39,10 @@ columns to assist in the soc2010 coding.  CLIPS can use a sic1987 columns.
 \strong{\code{run_soccernet()}} requires:
 \itemize{
 \item \code{JobTitle} — job title text \emph{(required)}
-\item \code{JobTask} — job task description \emph{(optional, created as empty string if missing)}
-\item \code{Id} — unique row identifier \emph{(optional, auto-generated as \code{row-001}, \code{row-002}, etc. if missing)}
+\item \code{JobTask} — job task description
+\emph{(optional, created as empty string if missing)}
+\item \code{Id} — unique row identifier
+\emph{(optional, auto-generated as \code{row-001}, \code{row-002}, etc. if missing)}
 }
 
 Optionally, crosswalk columns \code{soc1980}, \code{noc2011}, and \code{isco1988} can be
@@ -70,7 +72,8 @@ run_soccernet(df)
 run_soccernet(df, n = 5, block_size = 16)
 
 # CLIPS
-df <- data.frame(products_services = c("Software development", "Cloud hosting"))
+df <- data.frame(products_services =
+  c("Software development", "Cloud hosting"))
 run_clips(df)
 }
 

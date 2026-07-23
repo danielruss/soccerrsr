@@ -87,6 +87,58 @@ mv_ofp <- ifelse(
   "src/Makevars"
 )
 
+# --- ONNX Runtime DLL fetch (Windows only) ---
+# Needed because Rtools uses the GNU toolchain, but Microsoft only ships
+# MSVC-format import libraries for onnxruntime.dll. soccer-rs's Cargo.toml
+# uses `ort`'s `load-dynamic` feature on windows-gnu, which loads this DLL
+# at runtime instead of linking it at compile time. install.libs.R bundles
+# the DLL into the installed package; .onLoad() points ORT_DYLIB_PATH at it.
+
+ort_version <- "1.24.2"  # keep in sync with the `ort` crate version pinned in soccer-rs/Cargo.toml
+ort_dll_relpath <- "src/onnxruntime.dll"
+
+if (is_windows) {
+  if (!file.exists(ort_dll_relpath)) {
+    message("Fetching ONNX Runtime ", ort_version, " for Windows...")
+
+    url <- sprintf(
+      "https://github.com/microsoft/onnxruntime/releases/download/v%s/onnxruntime-win-x64-%s.zip",
+      ort_version, ort_version
+    )
+
+    tmp_zip <- tempfile(fileext = ".zip")
+    tmp_dir <- tempfile()
+
+    tryCatch(
+      {
+        download.file(url, tmp_zip, mode = "wb", quiet = FALSE)
+        unzip(tmp_zip, exdir = tmp_dir)
+
+        dll_src <- file.path(
+          tmp_dir,
+          sprintf("onnxruntime-win-x64-%s", ort_version),
+          "lib", "onnxruntime.dll"
+        )
+
+        if (!file.exists(dll_src)) {
+          stop("Expected DLL not found at: ", dll_src)
+        }
+
+        file.copy(dll_src, ort_dll_relpath, overwrite = TRUE)
+        message("onnxruntime.dll placed at ", ort_dll_relpath)
+      },
+      error = function(e) stop("Failed to fetch ONNX Runtime DLL: ", conditionMessage(e)),
+      finally = {
+        unlink(tmp_zip)
+        unlink(tmp_dir, recursive = TRUE)
+      }
+    )
+  } else {
+    message("onnxruntime.dll already present, skipping download.")
+  }
+}
+
+
 # delete the existing Makevars{.win/.wasm}
 if (file.exists(mv_ofp)) {
   message("Cleaning previous `", mv_ofp, "`.")

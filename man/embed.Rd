@@ -11,9 +11,11 @@ embed_job(text1, text2 = NULL)
 embed_jobs(df)
 }
 \arguments{
-\item{text1}{A single character string to embed (job title or product/service)}
+\item{text1}{A single character string to embed
+(job title or product/service)}
 
-\item{text2}{An optional single character string for additional context (job task)}
+\item{text2}{An optional single character string for additional context
+(job task)}
 
 \item{df}{A data frame containing either:
 \itemize{
@@ -42,11 +44,13 @@ embed_job("Doctor", "Diagnose patients")
 embed_job("Doctor")
 
 # Batch embedding - SOCcerNET
-df <- data.frame(JobTitle = c("Doctor", "Lawyer"), JobTask = c("Diagnose patients", "Draft contracts"))
+df <- data.frame(JobTitle = c("Doctor", "Lawyer"),
+JobTask = c("Diagnose patients", "Draft contracts"))
 embed_jobs(df)
 
 # Batch embedding - CLIPS
-df <- data.frame(products_services = c("Software development", "Cloud hosting"))
+df <- data.frame(products_services =
+  c("Software development", "Cloud hosting"))
 embed_jobs(df)
 }
 
