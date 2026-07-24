@@ -9,3 +9,4 @@
 ^src/Makevars$
 ^src/Makevars\.win$
 ^LICENSE\.md$
+^cid_test$
