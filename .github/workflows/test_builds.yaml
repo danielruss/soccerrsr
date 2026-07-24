@@ -30,6 +30,5 @@ jobs:
           install.packages("soccerrsr"), repos = c('https://danielruss.r-universe.dev', 'https://cloud.r-project.org')
         shell: Rscript {0}
 
-      -name: Run test script
+      - name: Run test script
         run: Rscript cicd_test/test.R
-      
