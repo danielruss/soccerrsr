@@ -72,6 +72,8 @@ cfg <- if (is_debug) "debug" else "release"
 
 # read in the Makevars.in file checking
 is_windows <- .Platform[["OS.type"]] == "windows"
+is_macos_x86_64 <- identical(Sys.info()[["sysname"]], "Darwin") &&
+  identical(R.version$arch, "x86_64")
 
 # if windows we replace in the Makevars.win.in
 mv_fp <- ifelse(
@@ -135,6 +137,49 @@ if (is_windows) {
     )
   } else {
     message("onnxruntime.dll already present, skipping download.")
+  }
+}
+
+# --- ONNX Runtime dylib fetch (Intel macOS only) ---
+# ort no longer publishes an x86_64-apple-darwin binary. This custom build is
+# loaded dynamically and bundled beside the installed R package shared library.
+ort_macos_archive <- sprintf("onnxruntime-macos-x86_64-%s.tar.gz", ort_version)
+ort_macos_dylib <- sprintf("libonnxruntime.%s.dylib", ort_version)
+ort_macos_dylib_relpath <- file.path("src", ort_macos_dylib)
+ort_macos_sha256 <- "57853607712285595b6a60598020ce8d0c2558a4028a24769bd0cb422d007759"
+
+if (is_macos_x86_64) {
+  if (!file.exists(ort_macos_dylib_relpath)) {
+    message("Fetching ONNX Runtime ", ort_version, " for Intel macOS...")
+
+    url <- sprintf(
+      paste0(
+        "https://github.com/danielruss/custom-ort-macos-x86-64/",
+        "releases/download/v%s/%s"
+      ),
+      ort_version,
+      ort_macos_archive
+    )
+    tmp_tar <- tempfile(fileext = ".tar.gz")
+
+    tryCatch(
+      {
+        download.file(url, tmp_tar, mode = "wb", quiet = FALSE)
+        actual_sha256 <- unname(tools::sha256sum(tmp_tar))
+        if (!identical(actual_sha256, ort_macos_sha256)) {
+          stop("ONNX Runtime archive checksum mismatch")
+        }
+        utils::untar(tmp_tar, files = ort_macos_dylib, exdir = "src")
+        if (!file.exists(ort_macos_dylib_relpath)) {
+          stop("Expected dylib not found after extraction: ", ort_macos_dylib)
+        }
+        message(ort_macos_dylib, " placed in src/")
+      },
+      error = function(e) stop("Failed to fetch Intel macOS ONNX Runtime: ", conditionMessage(e)),
+      finally = unlink(tmp_tar)
+    )
+  } else {
+    message(ort_macos_dylib, " already present, skipping download.")
   }
 }
 

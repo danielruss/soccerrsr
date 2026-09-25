@@ -25,3 +25,15 @@ if (WINDOWS) {
     warning("onnxruntime.dll not found in src/ at install time — did tools/config.R run?")
   }
 }
+
+# 3. The custom ONNX Runtime dylib (Intel macOS only)
+if (identical(Sys.info()[["sysname"]], "Darwin") &&
+    identical(R.version$arch, "x86_64")) {
+  ort_dylib <- "libonnxruntime.1.24.2.dylib"
+  if (file.exists(ort_dylib)) {
+    file.copy(ort_dylib, file.path(dest, ort_dylib), overwrite = TRUE)
+    message("Copied ", ort_dylib, " to ", dest)
+  } else {
+    warning(ort_dylib, " not found in src/ at install time — did tools/config.R run?")
+  }
+}
