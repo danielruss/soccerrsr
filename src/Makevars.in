@@ -12,6 +12,18 @@ $(SHLIB): $(STATLIB)
 CARGOTMP = $(CURDIR)/.cargo
 VENDOR_DIR = $(CURDIR)/vendor
 
+# Use each ONNX Runtime binary's deployment target for native code built by
+# Rust dependencies. Otherwise, Clang defaults to the installed SDK version
+# and R's linker reports version mismatches.
+ifeq ($(shell uname -s),Darwin)
+ifeq ($(shell uname -m),arm64)
+MACOSX_DEPLOYMENT_TARGET ?= 13.4
+else
+MACOSX_DEPLOYMENT_TARGET ?= 11.0
+endif
+export MACOSX_DEPLOYMENT_TARGET
+endif
+
 
 # RUSTFLAGS appends --print=native-static-libs to ensure that 
 # the correct linkers are used. Use this for debugging if need. 

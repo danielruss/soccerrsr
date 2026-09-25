@@ -1,14 +1,14 @@
 use extendr_api::prelude::*;
 use indicatif::ProgressBar;
 use soccer_rs::{
-    get_classification_system, get_crosswalk, CodedJobDescription, Crosswalk, ModelType, MyError,
+    get_classification_system, get_crosswalk, CodedJobDescription, Crosswalk, ModelType, SoccerError,
     SoccerBuilder, SoccerPipeline, MODEL_CONFIG,
 };
 use std::{cmp::min, result::Result, slice, sync::Arc};
 
 // Run SOCcerNET from R
 #[extendr]
-fn soccer_net(df: Dataframe<Robj>, n: usize, block_size: Option<usize>) -> Result<Robj, MyError> {
+fn soccer_net(df: Dataframe<Robj>, n: usize, block_size: Option<usize>) -> Result<Robj, SoccerError> {
     // need to deal with the version...
     let config = MODEL_CONFIG
         .get_config(&ModelType::SOCcerNET, "1.0.0")
@@ -55,7 +55,7 @@ fn soccer_net(df: Dataframe<Robj>, n: usize, block_size: Option<usize>) -> Resul
     let num_chunks = ids.chunks(effective_block_size).len() as u64;
     let pb = ProgressBar::new(num_chunks);
 
-    let all_results: Result<Vec<_>, MyError> = ids
+    let all_results: Result<Vec<_>, SoccerError> = ids
         .chunks(effective_block_size)
         .enumerate()
         .map(|(chunk_indx, id_block)| {
@@ -78,7 +78,7 @@ fn soccer_net(df: Dataframe<Robj>, n: usize, block_size: Option<usize>) -> Resul
 
 // Run clips
 #[extendr]
-fn clips(df: Dataframe<Robj>, n: usize, block_size: Option<usize>) -> Result<Robj, MyError> {
+fn clips(df: Dataframe<Robj>, n: usize, block_size: Option<usize>) -> Result<Robj, SoccerError> {
     let config = MODEL_CONFIG.get_config(&ModelType::CLIPS, "1.0.0").unwrap();
     let mut pipeline = SoccerPipeline::build(config).unwrap();
 
@@ -109,7 +109,7 @@ fn clips(df: Dataframe<Robj>, n: usize, block_size: Option<usize>) -> Result<Rob
 
     let pb = RProgressBar::new(num_chunks);
 
-    let all_results: Result<Vec<_>, MyError> = ids
+    let all_results: Result<Vec<_>, SoccerError> = ids
         .chunks(effective_block_size)
         .enumerate()
         .map(|(chunk_indx, id_block)| {
@@ -133,7 +133,7 @@ fn clips(df: Dataframe<Robj>, n: usize, block_size: Option<usize>) -> Result<Rob
 
 // Embed a job
 #[extendr]
-fn embed_job(text1: &str, text2: Option<&str>) -> Result<Vec<f64>, MyError> {
+fn embed_job(text1: &str, text2: Option<&str>) -> Result<Vec<f64>, SoccerError> {
     let text1 = &[text1];
 
     let text2 = text2.as_ref().map(|x| slice::from_ref(x));
@@ -142,7 +142,7 @@ fn embed_job(text1: &str, text2: Option<&str>) -> Result<Vec<f64>, MyError> {
 }
 
 #[extendr]
-fn embed_jobs(text1: Vec<String>, text2: Option<Vec<String>>) -> Result<Vec<f64>, MyError> {
+fn embed_jobs(text1: Vec<String>, text2: Option<Vec<String>>) -> Result<Vec<f64>, SoccerError> {
     let text1 = text1.iter().map(|s| s.as_str()).collect::<Vec<&str>>();
     let text2 = text2
         .as_ref()
@@ -155,17 +155,17 @@ fn embed_jobs(text1: Vec<String>, text2: Option<Vec<String>>) -> Result<Vec<f64>
     Ok(res.embeddings.iter().map(|&x| x as f64).collect())
 }
 
-fn embed(text1: &[&str], text2: Option<&[&str]>) -> Result<Vec<f64>, MyError> {
+fn embed(text1: &[&str], text2: Option<&[&str]>) -> Result<Vec<f64>, SoccerError> {
     let res = soccer_rs::embed_jobs(text1, text2)?;
     Ok(res.embeddings.iter().map(|&x| x as f64).collect())
 }
 
-fn get_strings(df: &Dataframe<Robj>, col_name: &str) -> Result<Strings, MyError> {
+fn get_strings(df: &Dataframe<Robj>, col_name: &str) -> Result<Strings, SoccerError> {
     Ok(df
         .dollar(col_name)
-        .map_err(|e| MyError::SoccerError(e.to_string()))?
+        .map_err(|e| SoccerError::InferenceError(e.to_string()))?
         .try_into()
-        .map_err(|e: Error| MyError::SoccerError(e.to_string()))?)
+        .map_err(|e: Error| SoccerError::InferenceError(e.to_string()))?)
 }
 
 fn make_str<'a>(string: &'a Strings) -> Vec<&'a str> {
@@ -226,7 +226,7 @@ fn build_result_df(
     soccer_results: Vec<CodedJobDescription>,
     n: usize,
     output_classification_system_name: &str,
-) -> Result<Robj, MyError> {
+) -> Result<Robj, SoccerError> {
     let output_classification_system =
         get_classification_system(output_classification_system_name)?;
     let n: usize = min(n, output_classification_system.len());
@@ -286,10 +286,10 @@ fn build_result_df(
 
     final_df
         .set_class(&["tbl_df", "tbl", "data.frame"])
-        .map_err(|e| MyError::OutputError(e.to_string()))?;
+        .map_err(|e| SoccerError::OutputError(e.to_string()))?;
     final_df
         .set_attrib("row.names", row_names)
-        .map_err(|e| MyError::OutputError(e.to_string()))?;
+        .map_err(|e| SoccerError::OutputError(e.to_string()))?;
     Ok(final_df)
 }
 
