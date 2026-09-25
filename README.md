@@ -1,4 +1,5 @@
 # soccerrsr
+[![R-universe status](https://danielruss.r-universe.dev/badges/soccerrsr)](https://danielruss.r-universe.dev/soccerrsr)
 
 `soccerrsr` brings the SOCcerNET occupation classifier and the CLIPS
 industry classifier to R. Classification and text embedding run locally using
