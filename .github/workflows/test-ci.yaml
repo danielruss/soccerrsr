@@ -63,7 +63,14 @@ jobs:
           stopifnot(R.version$arch == "${{ matrix.config.r_arch }}")
 
       - name: Install soccerrsr from source
-        run: R CMD INSTALL --preclean .
+        shell: Rscript {0}
+        run: |
+          r_binary <- file.path(
+            R.home("bin"),
+            if (.Platform$OS.type == "windows") "R.exe" else "R"
+          )
+          status <- system2(r_binary, c("CMD", "INSTALL", "--preclean", "."))
+          if (status != 0L) quit(status = status)
 
       - name: Verify bundled Intel macOS ONNX Runtime
         if: matrix.config.id == 'macos-intel'
