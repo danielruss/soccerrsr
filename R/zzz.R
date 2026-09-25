@@ -14,6 +14,21 @@
     }
   }
 
+  if (identical(Sys.info()[["sysname"]], "Linux")) {
+    ort_so <- system.file(
+      "libs", .Platform$r_arch, "libonnxruntime.so",
+      package = pkgname
+    )
+    if (nzchar(ort_so) && file.exists(ort_so)) {
+      Sys.setenv(ORT_DYLIB_PATH = ort_so)
+    } else {
+      warning(
+        "Linux ONNX Runtime shared library not found alongside the installed package. ",
+        "The soccer-rs pipeline may fail to initialize."
+      )
+    }
+  }
+
   if (identical(Sys.info()[["sysname"]], "Darwin") &&
       identical(R.version$arch, "x86_64")) {
     ort_dylib <- system.file(

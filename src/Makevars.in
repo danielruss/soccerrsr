@@ -3,6 +3,10 @@ LIBDIR = $(TARGET_DIR)/@LIBDIR@
 STATLIB = $(LIBDIR)/libsoccerrsr.a
 PKG_LIBS = -L$(LIBDIR) -lsoccerrsr
 
+ifeq ($(shell uname -s),Linux)
+PKG_LIBS += -lstdc++
+endif
+
 all: $(SHLIB) rust_clean
 
 .PHONY: $(STATLIB)

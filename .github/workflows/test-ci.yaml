@@ -105,5 +105,30 @@ jobs:
           stopifnot(file.exists(dll))
           stopifnot(normalizePath(Sys.getenv("ORT_DYLIB_PATH")) == normalizePath(dll))
 
+      - name: Verify bundled Linux ONNX Runtime
+        if: matrix.config.id == 'linux'
+        shell: Rscript {0}
+        run: |
+          library(soccerrsr)
+          ort_so <- system.file(
+            "libs",
+            .Platform$r_arch,
+            "libonnxruntime.so",
+            package = "soccerrsr"
+          )
+          providers_so <- system.file(
+            "libs",
+            .Platform$r_arch,
+            "libonnxruntime_providers_shared.so",
+            package = "soccerrsr"
+          )
+
+          stopifnot(file.exists(ort_so))
+          stopifnot(file.exists(providers_so))
+          stopifnot(normalizePath(Sys.getenv("ORT_DYLIB_PATH")) == normalizePath(ort_so))
+          dependencies <- system2("ldd", ort_so, stdout = TRUE)
+          print(dependencies)
+          stopifnot(!any(grepl("not found", dependencies, fixed = TRUE)))
+
       - name: Run inference smoke test
         run: Rscript cicd_test/test.R

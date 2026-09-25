@@ -1,7 +1,7 @@
 # src/install.libs.R
 # Overrides R's default install step so we control exactly what lands in
-# <pkg>/libs/<arch>/ — needed because we also ship onnxruntime.dll, not
-# just the compiled package shared library.
+# <pkg>/libs/<arch>/ — needed because we also ship ONNX Runtime, not just
+# the compiled package shared library.
 
 dest <- file.path(R_PACKAGE_DIR, paste0("libs", R_ARCH))
 dir.create(dest, recursive = TRUE, showWarnings = FALSE)
@@ -26,7 +26,23 @@ if (WINDOWS) {
   }
 }
 
-# 3. The custom ONNX Runtime dylib (Intel macOS only)
+# 3. The bundled ONNX Runtime shared libraries (Linux only)
+if (identical(Sys.info()[["sysname"]], "Linux")) {
+  ort_linux_files <- c(
+    "libonnxruntime.so",
+    "libonnxruntime_providers_shared.so"
+  )
+  for (ort_so in ort_linux_files) {
+    if (file.exists(ort_so)) {
+      file.copy(ort_so, file.path(dest, ort_so), overwrite = TRUE)
+      message("Copied ", ort_so, " to ", dest)
+    } else {
+      warning(ort_so, " not found in src/ at install time — did tools/config.R run?")
+    }
+  }
+}
+
+# 4. The custom ONNX Runtime dylib (Intel macOS only)
 if (identical(Sys.info()[["sysname"]], "Darwin") &&
     identical(R.version$arch, "x86_64")) {
   ort_dylib <- "libonnxruntime.1.24.2.dylib"
