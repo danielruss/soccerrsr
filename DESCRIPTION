@@ -1,7 +1,7 @@
 Package: soccerrsr
 Type: Package
 Title: SOCcer Occupation and Industry Classification
-Version: 0.1.6
+Version: 0.1.7
 Authors@R: c(
     person("Daniel", "Russ", , "druss@mail.nih.gov", role = c("aut", "cre"))
   )
@@ -19,5 +19,7 @@ Depends:
     R (>= 4.2)
 Config/roxygen2/version: 8.0.0
 Imports: 
+    crayon,
     dplyr,
+    progress,
     stringr

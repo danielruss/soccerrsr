@@ -1,5 +1,4 @@
 use extendr_api::prelude::*;
-use indicatif::ProgressBar;
 use soccer_rs::{
     get_classification_system, get_crosswalk, CodedJobDescription, Crosswalk, ModelType,
     SoccerBuilder, SoccerError, SoccerPipeline, MODEL_CONFIG,
@@ -63,7 +62,7 @@ fn soccer_net(
     let prior: Vec<Box<[u16]>> = prior.into_iter().map(|v| v.into_boxed_slice()).collect();
 
     let num_chunks = ids.chunks(effective_block_size).len() as u64;
-    let pb = ProgressBar::new(num_chunks);
+    let pb = RProgressBar::new(num_chunks);
 
     let all_results: Result<Vec<_>, SoccerError> = ids
         .chunks(effective_block_size)
@@ -71,13 +70,14 @@ fn soccer_net(
         .map(|(chunk_indx, id_block)| {
             let indx_start = chunk_indx * effective_block_size;
             let indx_end = min(indx_start + id_block.len(), ids.len());
-            pb.tick();
-            pipeline.predict_from_columns(
+            let results = pipeline.predict_from_columns(
                 id_block,
                 &job_titles[indx_start..indx_end],
                 Some(&job_tasks[indx_start..indx_end]),
                 &prior[indx_start..indx_end],
-            )
+            )?;
+            pb.tick();
+            Ok(results)
         })
         .collect();
     let all_results = all_results?.into_iter().flatten().collect();
@@ -123,15 +123,16 @@ fn clips(df: Dataframe<Robj>, n: usize, block_size: Option<usize>) -> Result<Rob
         .chunks(effective_block_size)
         .enumerate()
         .map(|(chunk_indx, id_block)| {
-            pb.tick();
             let indx_start = chunk_indx * effective_block_size;
             let indx_end = min(indx_start + id_block.len(), ids.len());
-            pipeline.predict_from_columns(
+            let results = pipeline.predict_from_columns(
                 id_block,
                 &products_services[indx_start..indx_end],
                 None,
                 &prior[indx_start..indx_end],
-            )
+            )?;
+            pb.tick();
+            Ok(results)
         })
         .collect();
 
