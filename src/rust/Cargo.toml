@@ -17,7 +17,7 @@ bench = false
 [dependencies]
 extendr-api = "0.9"
 indicatif = "0.17.8"
-soccer-rs = "0.2.0"
+soccer-rs = "0.3"
 
 [target.'cfg(all(target_os = "macos", target_arch = "x86_64"))'.dependencies]
 ort = { version = "2.0.0-rc.12", default-features = false, features = ["load-dynamic", "api-24"] }
