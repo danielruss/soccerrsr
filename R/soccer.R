@@ -74,7 +74,7 @@ run_soccernet <- function(df,n=10,block_size=8){
     cat("...You did not supply a JobTask column... filling with empty strings\n")
     df["JobTask"] = ""
   }
-  xw_cols <- c("soc1980","noc2011","isco1988")
+  xw_cols <- c("soc1980","noc2011","isco1988","census2000")
   df1 <- df |> dplyr::mutate(dplyr::across(dplyr::any_of(xw_cols),\(c){if (is.list(c)) {c} else {as.list(c)}}) )
   res <- soccer_net(df1,n,block_size)
   df |> dplyr::left_join(res,by="Id")
@@ -93,6 +93,8 @@ run_clips <- function(df,n=10,block_size=20){
     df["Id"]=paste0("row-",stringr::str_pad(1:nrow(df),num_chars,"left","0") )
     df <- df |> dplyr::relocate("Id")
   }
+  xw_cols <- c("sic1987")
+  df <- df |> dplyr::mutate(dplyr::across(dplyr::any_of(xw_cols),\(c){if (is.list(c)) {c} else {as.list(c)}}) )
 
   cat("Running CLIPS...")
   res <- clips(df,n,block_size)

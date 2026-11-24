@@ -1,14 +1,18 @@
 use extendr_api::prelude::*;
 use indicatif::ProgressBar;
 use soccer_rs::{
-    get_classification_system, get_crosswalk, CodedJobDescription, Crosswalk, ModelType, SoccerError,
-    SoccerBuilder, SoccerPipeline, MODEL_CONFIG,
+    get_classification_system, get_crosswalk, CodedJobDescription, Crosswalk, ModelType,
+    SoccerBuilder, SoccerError, SoccerPipeline, MODEL_CONFIG,
 };
 use std::{cmp::min, result::Result, slice, sync::Arc};
 
 // Run SOCcerNET from R
 #[extendr]
-fn soccer_net(df: Dataframe<Robj>, n: usize, block_size: Option<usize>) -> Result<Robj, SoccerError> {
+fn soccer_net(
+    df: Dataframe<Robj>,
+    n: usize,
+    block_size: Option<usize>,
+) -> Result<Robj, SoccerError> {
     // need to deal with the version...
     let config = MODEL_CONFIG
         .get_config(&ModelType::SOCcerNET, "1.0.0")
@@ -45,6 +49,12 @@ fn soccer_net(df: Dataframe<Robj>, n: usize, block_size: Option<usize>) -> Resul
     adjust_prior(
         &df,
         "isco1988",
+        &mut prior,
+        output_classification_system_name,
+    );
+    adjust_prior(
+        &df,
+        "census2000",
         &mut prior,
         output_classification_system_name,
     );

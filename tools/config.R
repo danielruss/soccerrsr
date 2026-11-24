@@ -90,68 +90,70 @@ mv_ofp <- ifelse(
   "src/Makevars"
 )
 
-# --- ONNX Runtime DLL fetch (Windows only) ---
-# Needed because Rtools uses the GNU toolchain, but Microsoft only ships
-# MSVC-format import libraries for onnxruntime.dll. soccer-rs's Cargo.toml
-# uses `ort`'s `load-dynamic` feature on windows-gnu, which loads this DLL
-# at runtime instead of linking it at compile time. install.libs.R bundles
-# the DLL into the installed package; .onLoad() points ORT_DYLIB_PATH at it.
-
+# --- ONNX Runtime native libraries from NuGet (Windows and Linux) ---
 ort_version <- "1.24.2"  # keep in sync with the `ort` crate version pinned in soccer-rs/Cargo.toml
-ort_dll_relpath <- "src/onnxruntime.dll"
+ort_nuget_sha256 <- "782564d3d68e87269ea1812cc94710ad06fe014faf093f01a6f89d0bd58719d3"
 
-if (is_windows) {
-  if (!file.exists(ort_dll_relpath)) {
-    message("Fetching ONNX Runtime ", ort_version, " for Windows...")
-
-    url <- sprintf(
-      "https://github.com/microsoft/onnxruntime/releases/download/v%s/onnxruntime-win-x64-%s.zip",
-      ort_version, ort_version
-    )
-
-    tmp_zip <- tempfile(fileext = ".zip")
-    tmp_dir <- tempfile()
-
-    tryCatch(
-      {
-        download.file(url, tmp_zip, mode = "wb", quiet = FALSE)
-        unzip(tmp_zip, exdir = tmp_dir)
-
-        dll_src <- file.path(
-          tmp_dir,
-          sprintf("onnxruntime-win-x64-%s", ort_version),
-          "lib", "onnxruntime.dll"
-        )
-
-        if (!file.exists(dll_src)) {
-          stop("Expected DLL not found at: ", dll_src)
-        }
-
-        file.copy(dll_src, ort_dll_relpath, overwrite = TRUE)
-        message("onnxruntime.dll placed at ", ort_dll_relpath)
-      },
-      error = function(e) stop("Failed to fetch ONNX Runtime DLL: ", conditionMessage(e)),
-      finally = {
-        unlink(tmp_zip)
-        unlink(tmp_dir, recursive = TRUE)
-      }
-    )
-  } else {
-    message("onnxruntime.dll already present, skipping download.")
+fetch_ort_nuget <- function(runtime, files, version = ort_version,
+                            sha256 = ort_nuget_sha256, dest_dir = "src") {
+  dest_files <- file.path(dest_dir, files)
+  if (all(file.exists(dest_files))) {
+    message("ONNX Runtime ", runtime, " libraries already present, skipping download.")
+    return(invisible(NULL))
   }
+
+  message("Fetching ONNX Runtime ", version, " for ", runtime, "...")
+  url <- sprintf(
+    paste0(
+      "https://api.nuget.org/v3-flatcontainer/microsoft.ml.onnxruntime/",
+      "%s/microsoft.ml.onnxruntime.%s.nupkg"
+    ),
+    version, version
+  )
+  tmp_zip <- tempfile(fileext = ".nupkg")
+  tmp_dir <- tempfile()
+  on.exit({
+    unlink(tmp_zip)
+    unlink(tmp_dir, recursive = TRUE)
+  }, add = TRUE)
+  # ZIP entries always use forward slashes, including on Windows.
+  archive_files <- paste("runtimes", runtime, "native", files, sep = "/")
+
+  tryCatch(
+    {
+      download.file(url, tmp_zip, mode = "wb", quiet = FALSE)
+      actual_sha256 <- unname(tools::sha256sum(tmp_zip))
+      if (!identical(actual_sha256, sha256)) {
+        stop("ONNX Runtime NuGet package checksum mismatch")
+      }
+
+      unzip(tmp_zip, files = archive_files, exdir = tmp_dir)
+      extracted_files <- file.path(tmp_dir, archive_files)
+      missing_files <- extracted_files[!file.exists(extracted_files)]
+      if (length(missing_files) > 0L) {
+        stop("Expected runtime file not found: ", missing_files[[1L]])
+      }
+
+      copied <- file.copy(extracted_files, dest_files, overwrite = TRUE)
+      if (!all(copied)) {
+        stop("Failed to copy ONNX Runtime libraries into ", dest_dir)
+      }
+      message("ONNX Runtime ", runtime, " libraries placed in ", dest_dir)
+    },
+    error = function(e) stop(
+      "Failed to fetch ONNX Runtime for ", runtime, ": ", conditionMessage(e)
+    )
+  )
 }
 
-# --- ONNX Runtime shared libraries (Linux only) ---
-# The static archive downloaded by ort-sys can require a newer glibc than the
-# target system. Load Microsoft's shared runtime dynamically instead and bundle
-# it beside the installed R package shared library.
-ort_linux_sha256 <- "782564d3d68e87269ea1812cc94710ad06fe014faf093f01a6f89d0bd58719d3"
-ort_linux_files <- c(
-  "libonnxruntime.so",
-  "libonnxruntime_providers_shared.so"
-)
-ort_linux_relpaths <- file.path("src", ort_linux_files)
+# Rtools uses the GNU toolchain, but Microsoft ships MSVC import libraries.
+# Load the DLL dynamically and bundle it beside the installed package library.
+if (is_windows) {
+  fetch_ort_nuget("win-x64", "onnxruntime.dll")
+}
 
+# The static archive downloaded by ort-sys can require a newer glibc than the
+# target system. Bundle Microsoft's shared runtime and load it dynamically.
 if (is_linux) {
   ort_linux_runtime <- switch(
     R.version$arch,
@@ -159,61 +161,10 @@ if (is_linux) {
     aarch64 = "linux-arm64",
     stop("Unsupported Linux architecture for ONNX Runtime: ", R.version$arch)
   )
-
-  if (!all(file.exists(ort_linux_relpaths))) {
-    message("Fetching ONNX Runtime ", ort_version, " for Linux...")
-
-    url <- sprintf(
-      paste0(
-        "https://api.nuget.org/v3-flatcontainer/microsoft.ml.onnxruntime/",
-        "%s/microsoft.ml.onnxruntime.%s.nupkg"
-      ),
-      ort_version,
-      ort_version
-    )
-    tmp_zip <- tempfile(fileext = ".nupkg")
-    tmp_dir <- tempfile()
-    archive_files <- file.path(
-      "runtimes",
-      ort_linux_runtime,
-      "native",
-      ort_linux_files
-    )
-
-    tryCatch(
-      {
-        download.file(url, tmp_zip, mode = "wb", quiet = FALSE)
-        actual_sha256 <- unname(tools::sha256sum(tmp_zip))
-        if (!identical(actual_sha256, ort_linux_sha256)) {
-          stop("ONNX Runtime NuGet package checksum mismatch")
-        }
-
-        unzip(tmp_zip, files = archive_files, exdir = tmp_dir)
-        extracted_files <- file.path(tmp_dir, archive_files)
-        missing_files <- extracted_files[!file.exists(extracted_files)]
-        if (length(missing_files) > 0L) {
-          stop("Expected Linux runtime file not found: ", missing_files[[1L]])
-        }
-
-        copied <- file.copy(
-          extracted_files,
-          ort_linux_relpaths,
-          overwrite = TRUE
-        )
-        if (!all(copied)) {
-          stop("Failed to copy ONNX Runtime Linux shared libraries into src/")
-        }
-        message("ONNX Runtime Linux shared libraries placed in src/")
-      },
-      error = function(e) stop("Failed to fetch Linux ONNX Runtime: ", conditionMessage(e)),
-      finally = {
-        unlink(tmp_zip)
-        unlink(tmp_dir, recursive = TRUE)
-      }
-    )
-  } else {
-    message("ONNX Runtime Linux shared libraries already present, skipping download.")
-  }
+  fetch_ort_nuget(
+    ort_linux_runtime,
+    c("libonnxruntime.so", "libonnxruntime_providers_shared.so")
+  )
 }
 
 # --- ONNX Runtime dylib fetch (Intel macOS only) ---
